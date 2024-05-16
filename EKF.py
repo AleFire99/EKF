@@ -38,12 +38,15 @@ import numpy as np
 from itertools import zip_longest
 
 class ExtendedKalmanFilter:
-    def __init__(self, state_equations, output_equations, state_symbols, input_symbols, params_dict):
+    def __init__(self, state_equations, output_equations, state_symbols, input_symbols, params_dict, Q_k, R_k, P_k_minus_1):
         self.state_equations = [sp.sympify(eq) for eq in state_equations]
         self.output_equations = [sp.sympify(eq) for eq in output_equations]
         self.state_symbols = [sp.symbols(sym) for sym in state_symbols]
         self.input_symbols = [sp.symbols(sym) for sym in input_symbols]
         self.params_dict = params_dict
+        self.Q_k = Q_k
+        self.R_k = R_k
+        self.P_k_minus_1 = P_k_minus_1
 
         self.A_num, self.B_num, self.C_num = self.linearize_and_substitute_params()
 
@@ -78,7 +81,7 @@ class ExtendedKalmanFilter:
 
         return A_num_eval, B_num_eval, C_num_eval, x_k
 
-    def ekf(self, x_k_minus_1, u_k_minus_1, y_k, Q_k, R_k, P_k_minus_1):
+    def ekf(self, x_k_minus_1, u_k_minus_1, y_k):
         ######################### Predict #############################
         # Predict the state estimate at time k based on the state
         # estimate at time k-1 and the control input applied at time k-1.
@@ -87,7 +90,7 @@ class ExtendedKalmanFilter:
 
         # Predict the state covariance estimate based on the previous
         # covariance and some noise
-        P_k = A_k_minus_1 @ P_k_minus_1 @ A_k_minus_1.T + Q_k
+        P_k = A_k_minus_1 @ self.P_k_minus_1 @ A_k_minus_1.T + self.Q_k
 
         ################### Update (Correct) ##########################
         # Calculate the difference between the actual sensor measurements
@@ -97,7 +100,7 @@ class ExtendedKalmanFilter:
         e_k = y_k - (C_num_eval @ x_k)
 
         # Calculate the measurement residual covariance
-        S_k = C_num_eval @ P_k @ C_num_eval.T + R_k
+        S_k = C_num_eval @ P_k @ C_num_eval.T + self.R_k
 
         S_k = np.array(S_k, dtype=float)  # Convert S_k to a NumPy array of floats
 
@@ -110,5 +113,7 @@ class ExtendedKalmanFilter:
         # Update the state covariance estimate for time k
         P_k = P_k - (K_k @ C_num_eval @ P_k)
 
+        self.P_k_minus_1 = P_k
+
         # Return the updated state and covariance estimates
-        return x_k, P_k
+        return x_k
