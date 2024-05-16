@@ -35,14 +35,13 @@ Methods:
 
 import sympy as sp
 import numpy as np
-from itertools import zip_longest
-
 class ExtendedKalmanFilter:
+
     def __init__(self, state_equations, output_equations, state_symbols, input_symbols, params_dict, Q_k, R_k, P_k_minus_1):
-        self.state_equations = [sp.sympify(eq) for eq in state_equations]
-        self.output_equations = [sp.sympify(eq) for eq in output_equations]
-        self.state_symbols = [sp.symbols(sym) for sym in state_symbols]
-        self.input_symbols = [sp.symbols(sym) for sym in input_symbols]
+        self.state_equations = state_equations
+        self.output_equations = output_equations
+        self.state_symbols = state_symbols
+        self.input_symbols = input_symbols
         self.params_dict = params_dict
         self.Q_k = Q_k
         self.R_k = R_k
@@ -65,19 +64,23 @@ class ExtendedKalmanFilter:
         B_num = B.subs(self.params_dict)
         C_num = C.subs(self.params_dict)
 
+        # Substitute parameter values in equations
+        self.state_equations = [eq.subs(self.params_dict) for eq in self.state_equations]
+
         return A_num, B_num, C_num
 
     def evaluate_and_update_states(self, x_k_minus_1, u_k_minus_1):
         # Substitute previous state and input values into the Jacobian matrices
-        params_dict_eval = dict(zip_longest(self.state_symbols, x_k_minus_1, fillvalue=0))
-        params_dict_eval.update(dict(zip_longest(self.input_symbols, u_k_minus_1, fillvalue=0)))
+
+        params_dict_eval = dict(zip(self.state_symbols, x_k_minus_1))
+        params_dict_eval.update(zip(self.input_symbols, u_k_minus_1[0]))
 
         A_num_eval = self.A_num.subs(params_dict_eval).evalf()
         B_num_eval = self.B_num.subs(params_dict_eval).evalf()
         C_num_eval = self.C_num.subs(params_dict_eval).evalf()
 
         # Evaluate the state equations to get the updated state vector (numerical values)
-        x_k = np.array([eq.subs(params_dict_eval).evalf() for eq in self.state_equations]).astype(float)
+        x_k = np.array([eq.subs(params_dict_eval).evalf() for eq in self.state_equations]).reshape(-1,1)
 
         return A_num_eval, B_num_eval, C_num_eval, x_k
 
@@ -97,7 +100,7 @@ class ExtendedKalmanFilter:
         # at time k minus what the measurement model predicted
         # the sensor measurements would be for the current timestep k.
 
-        e_k = y_k - (C_num_eval @ x_k)
+        e_k = y_k.reshape(-1,1) - (C_num_eval @ x_k)
 
         # Calculate the measurement residual covariance
         S_k = C_num_eval @ P_k @ C_num_eval.T + self.R_k
