@@ -45,7 +45,7 @@ class ExtendedKalmanFilter:
         self.input_symbols = [sp.symbols(sym) for sym in input_symbols]
         self.params_dict = params_dict
 
-        self.A_num, self.B_num, self.C_num, _ = self.linearize_and_substitute_params()
+        self.A_num, self.B_num, self.C_num = self.linearize_and_substitute_params()
 
     def linearize_and_substitute_params(self):
         # Create a sympy Matrix for the system of equations
@@ -62,7 +62,7 @@ class ExtendedKalmanFilter:
         B_num = B.subs(self.params_dict)
         C_num = C.subs(self.params_dict)
 
-        return A_num, B_num, C_num, self.state_equations
+        return A_num, B_num, C_num
 
     def evaluate_and_update_states(self, x_k_minus_1, u_k_minus_1):
         # Substitute previous state and input values into the Jacobian matrices
