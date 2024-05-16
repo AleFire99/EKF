@@ -78,7 +78,7 @@ class ExtendedKalmanFilter:
 
         return A_num_eval, B_num_eval, C_num_eval, x_k
 
-    def ekf(self, x_k_minus_1, u_k_minus_1, y_k, P_k_minus_1, Q_k, R_k):
+    def ekf(self, x_k_minus_1, u_k_minus_1, y_k, Q_k, R_k, P_k_minus_1):
         ######################### Predict #############################
         # Predict the state estimate at time k based on the state
         # estimate at time k-1 and the control input applied at time k-1.
