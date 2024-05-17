@@ -37,17 +37,20 @@ import sympy as sp
 import numpy as np
 class ExtendedKalmanFilter:
 
-    def __init__(self, state_equations, output_equations, state_symbols, input_symbols, params_dict, Q_k, R_k, P_k_minus_1):
+    def __init__(self, state_equations, output_equations, state_symbols, input_symbols, params_dict, P_k_minus_1):
         self.state_equations = state_equations
         self.output_equations = output_equations
         self.state_symbols = state_symbols
         self.input_symbols = input_symbols
         self.params_dict = params_dict
-        self.Q_k = Q_k
-        self.R_k = R_k
         self.P_k_minus_1 = P_k_minus_1
 
         self.A_num, self.B_num, self.C_num = self.linearize_and_substitute_params()
+
+    def set_QR(self, Q_k, R_k):
+        self.Q_k = Q_k
+        self.R_k = R_k
+        
 
     def linearize_and_substitute_params(self):
         # Create a sympy Matrix for the system of equations
